@@ -11,7 +11,7 @@ int switchDelay = 50;
 int buttonPin = 9;  // Set a button to any pin
 int previousButtonPosition = 1;
 int currentButtonPosition;
-int buttonDelay = 100;
+int buttonDelay = 500;
 
 bool activated = false;
 bool armed = false;
@@ -74,9 +74,10 @@ void loop()
     if (currentSwitchPosition != previousSwitchPosition)  // if the button is pressed or depressed
     {
       if(currentSwitchPosition == LOW){ // which is on
-        Keyboard.press('KEY_LEFT_GUI');
-        Keyboard.write('§');  // send a '§' to the computer via Keyboard HID
-        Keyboard.release('KEY_LEFT_GUI');
+        Keyboard.press(KEY_LEFT_GUI);
+        Keyboard.press(KEY_LEFT_SHIFT);
+        Keyboard.press('1');  // send a command to the computer via Keyboard HID
+        Keyboard.releaseAll();
         Serial.write("Switch on\n");
         delay(switchDelay);
         armed = true;
