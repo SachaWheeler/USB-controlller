@@ -1,17 +1,29 @@
 int keyPin = 7;  // Set a button to any pin
 int previousKeyPosition = 1;
 int currentKeyPosition;
+int keyDelay = 50;
 
 int switchPin = 8;  // Set a button to any pin
 int previousSwitchPosition = 1;
 int currentSwitchPosition;
+int switchDelay = 50;
 
 int buttonPin = 9;  // Set a button to any pin
 int previousButtonPosition = 1;
 int currentButtonPosition;
+int buttonDelay = 100;
 
 bool activated = false;
 bool armed = false;
+bool recording = false;
+
+int ledOff = 6;
+int ledOn = 5;
+int ledBlink = 4;
+int ledState = LOW;
+
+unsigned long previousMillis = 0;
+const long interval = 500;
 
 void setup()
 {
@@ -24,71 +36,97 @@ void setup()
   pinMode(buttonPin, INPUT);  // Set the button as an input
   digitalWrite(buttonPin, HIGH);  // Pull the button HIGH
 
+  pinMode(ledOff, OUTPUT);
+  digitalWrite(ledOff, HIGH);
+
+  pinMode(ledOn, OUTPUT);
+  digitalWrite(ledOn, LOW);
+
+  pinMode(ledBlink, OUTPUT);
+  digitalWrite(ledBlink, LOW);
+
   Serial.begin(9600); 
 }
 
 void loop()
 {
-  currentKeyPosition = digitalRead(keyPin);
-  if (currentKeyPosition != previousKeyPosition)  // if the key position is changed
-  {
-    if(currentKeyPosition == LOW){ // which is on
-      Serial.print("activated\t");
-      Serial.print(currentKeyPosition);
-      Serial.print("\n");
-      delay(10);
-      activated = true;
-    }else{
-      Serial.print("deactivated\t");
-      Serial.print(currentKeyPosition);
-      Serial.print("\n");
-      delay(10);
-      activated = false;
+    currentKeyPosition = digitalRead(keyPin);
+    if (currentKeyPosition != previousKeyPosition)  // if the key position is changed
+    {
+      if(currentKeyPosition == LOW){ // which is on
+        digitalWrite(ledOn, HIGH);
+        digitalWrite(ledOff, LOW);
+        activated = true;
+        Serial.write("Key on\n");
+        delay(keyDelay);
+      }else{
+        digitalWrite(ledOn, LOW);
+        digitalWrite(ledOff, HIGH);
+        activated = false;
+        armed = false;
+        recording = false;
+        delay(keyDelay);
+      }
+      previousKeyPosition = currentKeyPosition;
     }
-    previousKeyPosition = currentKeyPosition;
-  }
 
-  currentSwitchPosition = digitalRead(switchPin);
-  if (currentSwitchPosition != previousSwitchPosition)  // if the button is pressed or depressed
-  {
-    if(currentSwitchPosition == LOW){ // which is on
-      Serial.print("armed\t");
-      Serial.print(currentSwitchPosition);
-      Serial.print("\n");
-      //Keyboard.write('z');  // send a 'z' to the computer via Keyboard HID
-      delay(10);
-      armed = true;
-    }else{
-      Serial.print("disarmed\t");
-      Serial.print(currentSwitchPosition);
-      Serial.print("\n");
-      delay(10);
-      armed = false;
+    currentSwitchPosition = digitalRead(switchPin);
+    if (currentSwitchPosition != previousSwitchPosition)  // if the button is pressed or depressed
+    {
+      if(currentSwitchPosition == LOW){ // which is on
+        Keyboard.press('KEY_LEFT_GUI');
+        Keyboard.write('§');  // send a '§' to the computer via Keyboard HID
+        Keyboard.release('KEY_LEFT_GUI');
+        Serial.write("Switch on\n");
+        delay(switchDelay);
+        armed = true;
+      }else{
+        delay(switchDelay);
+        armed = false;
+        recording = false;
+      }
+      previousSwitchPosition = currentSwitchPosition;
     }
-    previousSwitchPosition = currentSwitchPosition;
-  }
 
   
-
+  // https://www.arduino.cc/en/Reference/KeyboardModifiers
   if(activated && armed){
     currentButtonPosition = digitalRead(buttonPin);
     if (currentButtonPosition != previousButtonPosition)  // if the button is pressed or depressed
     {
       if(currentButtonPosition == LOW){ // which is on
-        Serial.print("record\t");
-        Serial.print(currentButtonPosition);
-        Serial.print("\n");
-        //Keyboard.write('r');  // send a 'r' to the computer via Keyboard HID
-        delay(10);
+        Keyboard.write('r');  // send a 'r' to the computer via Keyboard HID
+        Serial.write("Recording\n");
+        recording = true;
+        delay(buttonDelay);
       }else{
-        Serial.print("pause\t");
-        Serial.print(currentButtonPosition);
-        Serial.print("\n");
-        //Keyboard.write('p');  // send a 'p' to the computer via Keyboard HID
-        delay(10);
+        Keyboard.write('p');  // send a 'p' to the computer via Keyboard HID
+        Serial.write("Paused\n");
+        recording = false;
+        delay(buttonDelay);
       }
       previousButtonPosition = currentButtonPosition;
     }
+    if(recording){
+      unsigned long currentMillis = millis();
+      if (currentMillis - previousMillis >= interval) {
+        // save the last time you blinked the LED
+        previousMillis = currentMillis;
+  
+        // if the LED is off turn it on and vice-versa:
+        if (ledState == LOW) {
+          ledState = HIGH;
+        }else{
+          ledState = LOW;
+        }
+        digitalWrite(ledBlink, ledState);
+     }
+    }else{
+      digitalWrite(ledBlink, LOW);
+    }
   }
 }
+/*
+ I@rp
+ */
 
